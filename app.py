@@ -1,8 +1,6 @@
-from flask import Flask, request, render_template, jsonify
+import gradio as gr
 import yt_dlp as youtube_dl
 import os
-
-app = Flask(__name__)
 
 # Function to download video
 def download_video(video_url):
@@ -12,27 +10,29 @@ def download_video(video_url):
         'noplaylist': True,
     }
     try:
+        # Ensure downloads directory exists
+        os.makedirs('downloads', exist_ok=True)
+        
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([video_url])
-        return "Download successful"
+            result = ydl.extract_info(video_url, download=True)
+            title = result.get('title', 'Unknown Title')
+            return f"Download successful: {title}"
     except Exception as e:
         return f"Error: {e}"
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Gradio Interface
+def gradio_download(video_url):
+    return download_video(video_url)
 
-@app.route('/download', methods=['POST'])
-def download():
-    video_url = request.form.get('video_url')
-    if not video_url:
-        return jsonify({'status': 'fail', 'message': 'No URL provided.'})
-    
-    # Ensure downloads directory exists
-    os.makedirs('downloads', exist_ok=True)
+# Create Gradio Interface
+interface = gr.Interface(
+    fn=gradio_download,
+    inputs=gr.Textbox(label="YouTube Video URL"),
+    outputs=gr.Textbox(label="Download Status"),
+    title="YouTube Video Downloader",
+    description="Enter a YouTube URL to download the video."
+)
 
-    result = download_video(video_url)
-    return jsonify({'status': 'success', 'message': result})
-
+# Launch the Gradio app
 if __name__ == '__main__':
-    app.run(debug=True)
+    interface.launch()
