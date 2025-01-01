@@ -1,10 +1,7 @@
-import gradio as gr
+import streamlit as st
 import yt_dlp as youtube_dl
 import os
-from urllib.parse import quote
-
-# Base URL for file download (modify if hosting publicly)
-BASE_URL = "http://127.0.0.1:7860/file/"
+from pathlib import Path
 
 # Function to download video
 def download_video(video_url):
@@ -20,26 +17,32 @@ def download_video(video_url):
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             result = ydl.extract_info(video_url, download=True)
             title = result.get('title', 'Unknown Title')
-            filename = ydl.prepare_filename(result)
-            file_path = os.path.abspath(filename)
-            download_link = BASE_URL + quote(os.path.relpath(file_path, "downloads"))
-            return f"Download successful: [Click here to download]({download_link})"
+            filepath = ydl.prepare_filename(result)
+            filepath = Path(filepath).resolve()
+            return f"Download successful: {title}", filepath
     except Exception as e:
-        return f"Error: {e}"
+        return f"Error: {e}", None
 
-# Gradio Interface
-def gradio_download(video_url):
-    return download_video(video_url)
+# Streamlit app
+st.title("YouTube Video Downloader")
+st.write("Enter a YouTube URL to download the video.")
 
-# Serve files using Gradio
-interface = gr.Interface(
-    fn=gradio_download,
-    inputs=gr.Textbox(label="YouTube Video URL"),
-    outputs=gr.Markdown(label="Download Link"),
-    title="YouTube Video Downloader",
-    description="Enter a YouTube URL to download the video. Click the link to save the video to your device."
-)
+# Input field for video URL
+video_url = st.text_input("YouTube Video URL:")
 
-# Launch the Gradio app
-if __name__ == '__main__':
-    interface.launch(share=True)
+if st.button("Download"):
+    if not video_url.strip():
+        st.error("Please enter a valid YouTube URL.")
+    else:
+        status, filepath = download_video(video_url)
+        if filepath:
+            st.success(status)
+            with open(filepath, "rb") as f:
+                btn = st.download_button(
+                    label="Download Video",
+                    data=f,
+                    file_name=filepath.name,
+                    mime="video/mp4"
+                )
+        else:
+            st.error(status)
