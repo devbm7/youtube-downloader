@@ -82,7 +82,7 @@ if video_url.strip():
                                 progress.progress(downloaded_bytes / total_bytes)
                                 status_text.text(f"Downloading: {downloaded_bytes / total_bytes:.2%}")
 
-                        status, _ = download_media(video['url'], "best", False, playlist_progress_hook)
+                        status, _ = download_media(video['url'], "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best", False, playlist_progress_hook)
                         st.success(status)
             else:  # Single video
                 st.success(f"Video found: {details['title']}")
