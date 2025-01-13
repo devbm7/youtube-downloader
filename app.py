@@ -29,7 +29,7 @@ def fetch_details(video_url):
 # Function to download video/audio
 def download_media(video_url, format_id, is_audio, progress_callback):
     ydl_opts = {
-        'format': format_id,
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best' if not is_audio else format_id,
         'outtmpl': 'downloads/%(title)s.%(ext)s',
         'progress_hooks': [progress_callback],
     }
